@@ -1,0 +1,11 @@
+# The interface to be limited
+IF=eth0
+# Kbps values
+DNSPEED=100000
+UPSPEED=7500
+# Percentages
+DNLIMIT=60 # ERLite3 can only manage 60Mbps
+UPLIMIT=95
+# Custom options
+UPOPTS=''
+DNOPTS='besteffort'
