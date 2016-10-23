@@ -1,0 +1,22 @@
+Disclaimer: these binaries ONLY work on EdgeRouter Lite devices!
+They overwrite stock binaries and can render the system unusable.
+Be sure you know how to load stock firmware again.
+
+To install on an EdgeRouter Lite:
+
+1. Run ./package.sh and copy resulting .tar.gz to /home/$YOUR_USER
+2. Execute the following:
+
+  $ sudo su
+  # cd /
+  # tar xvf /home/$YOUR_USER/cake-binaries-modules-and-scripts-ERLite3-only.tar.gz
+
+3. Run "cake" and read the usage information. You can now keep using it on the commandline
+   to experiment with different settings until the results are satisfiying.
+4. Copy /config/cake.example to /config/cake and edit to make your preferred settings the default.
+5. Make Cake start automatically during boot (be careful with this):
+
+  # cd /etc/rc2.d
+  # ln -s /etc/init.d/cake S99cake
+
+Please note that upgrading the firmware will require you to run step 2 again!
