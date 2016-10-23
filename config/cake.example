@@ -1,10 +1,10 @@
 # The interface to be limited
 IF=eth0
 # Kbps values
-DNSPEED=100000
+DNSPEED=100000 # 100MBit - see comment on the DNLIMIT line as well!
 UPSPEED=7500
 # Percentages
-DNLIMIT=60 # ERLite3 can only manage 60Mbps
+DNLIMIT=60 # Cake falls apart beyond 60Mbps on the ERLite3
 UPLIMIT=95
 # Custom options
 UPOPTS=''

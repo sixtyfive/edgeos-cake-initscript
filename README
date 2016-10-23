@@ -10,6 +10,7 @@ To install on an EdgeRouter Lite:
   $ sudo su
   # cd /
   # tar xvf /home/$YOUR_USER/cake-binaries-modules-and-scripts-ERLite3-only.tar.gz
+  # depmod -a
 
 3. Run "cake" and read the usage information. You can now keep using it on the commandline
    to experiment with different settings until the results are satisfiying.
