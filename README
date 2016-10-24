@@ -20,4 +20,4 @@ To install on an EdgeRouter Lite:
   # cd /etc/rc2.d
   # ln -s /etc/init.d/cake S99cake
 
-Please note that upgrading the firmware will require you to run step 2 again!
+Please note that upgrading the firmware will require you to run steps 2 + 5 again!
