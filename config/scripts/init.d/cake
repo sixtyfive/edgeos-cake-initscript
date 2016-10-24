@@ -1,5 +1,7 @@
 #!/bin/bash
-# Save as /etc/init.d/cake
+
+# Background:
+# http://community.ubnt.com/t5/EdgeMAX/Cake-compiled-for-the-EdgeRouter-devices/td-p/1679844
 
 ### BEGIN INIT INFO
 # Provides:       cake
@@ -11,33 +13,72 @@
 ### END INIT INFO
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
+CONFIG=/config/cake
 
 . /lib/lsb/init-functions
 
+# Define special binaries' paths
 TC=/sbin/tc
 IP=/sbin/ip
 
-if [ -r /config/cake ]; then
-  . /config/cake
+# Make sure basic prerequisites are fulfilled
+if [ -r $CONFIG ]; then
+  . $CONFIG # Load defaults from config file
   if [ -z "$DNSPEED" -o -z "$UPSPEED" \
     -o -z "$DNLIMIT" -o -z "$UPLIMIT" \
     -o -z "$IF" ]; then
-    echo "Error: /config/cake is not complete!"
+    echo "Error: $CONFIG is not complete!"
     exit 5
   fi; if [ ! -x $TC -o ! -x $IP ]; then
     echo "Error: both $TC and $IP must be present and executable!"
     # exit 5
   fi
 else
-  echo "Error: /config/cake must exist!"
+  echo "Error: $CONFIG must exist!"
   exit 5
 fi
 
-if [ "$#" -gt 1 -a "$2" != "stop" ]; then
-  UPOPTS="${@:2}"
-  DNOPTS="$UPOPTS"
-  echo "Applying custom options '$UPOPTS'."
-fi
+# Parse command line options, overwriting defaults while doing so
+for i in "$@"; do
+  case $i in
+    --if=*)
+    IF="${i#*=}"
+    shift
+    ;;
+    --dnspeed=*)
+    DNSPEED="${i#*=}"
+    shift
+    ;;
+    --upspeed=*)
+    UPSPEED="${i#*=}"
+    shift
+    ;;
+    --dnlimit=*)
+    DNLIMIT="${i#*=}"
+    shift
+    ;;
+    --uplimit=*)
+    UPLIMIT="${i#*=}"
+    shift
+    ;;
+    --opts=*)
+    UPOPTS="${i#*=}"
+    DNOPTS="$UPOPTS"
+    shift
+    ;;
+    --upopts=*)
+    UPOPTS="${i#*=}"
+    shift
+    ;;
+    --dnopts=*)
+    DNOPTS="${i#*=}"
+    shift
+    ;;
+    *)
+    COMMAND="$i" # In a legit commandline, only start/stop/etc. would remain
+    ;;
+  esac
+done
 
 load() {
   modprobe sch_cake
@@ -87,39 +128,47 @@ set_limits() {
 
 usage() {
   # Usage notes also taken and adapted from pgage's script
-  # FIXME: Rework the script so pgage's commandline arguments work properly again!
-  echo "Usage: $0 <start|stop|reload|status> [cake args]"
-  echo
-  echo Note: This script must be run as root or with sudo
+  echo "Usage: $0 <start|stop|reload|status> [options]"
+  echo Note: This script must be run as root or with sudo.
   echo
   echo Turn Cake on:
-  echo "    $0 start [cake args]"
+  echo "    $0 start [options]"
   echo
   echo Turn Cake off:
   echo "    $0 stop"
   echo
   echo Change Cake options:
-  echo "    $0 reload [cake args]"
+  echo "    $0 reload [options]"
   echo
   echo Show status:
   echo "    $0 status"
   echo
-  echo "[cake args] are optional and provide any additional arguments to Cake"
+  echo Options:
+  echo "    --if=interface"
+  echo "    --dnspeed=kbps, --upspeed=kbps"
+  echo "    --dnlimit=percent, --uplimit=percent"
+  echo "    --opts=\"cake arguments\" (applied to both directions)"
+  echo "    or --dnopts, --upopts (to treat directions differently)"
+  echo
+  echo "Interface, speeds and limits are mandatory and need to be defined"
+  echo "either in /config/cake or through commandline arguments."
+  echo "Cake arguments are optional and passed directly to Cake."
   echo "    See https://www.bufferbloat.net/projects/codel/wiki/Cake/"
   echo
   echo Examples:
   echo
-  echo 'ADSL modem using PPPoE with LLC-Snap connected via Ethernet:'
-  echo $0 reload pppoe-llcsnap via-ethernet # 360kbit 5mbit
+  echo "ADSL modem using PPPoE with LLC-Snap (interface defined in $CONFIG):"
+  echo "$0 reload --dnspeed=5000000 --upspeed=360000 --opts=\"pppoe-llcsnap via-ethernet\""
   echo
-  echo 'Symmetric WiFi uplink, enable host fairness (triple isolation) with NAT support:'
-  echo $0 start triple-isolate nat # 30mbit 30mbit
+  echo "Symmetric WiFi uplink, enable host fairness (triple isolation) with NAT support:"
+  echo "(speeds and percentages defined in $CONFIG)"
+  echo "$0 start --if=eth3 --opts=\"triple-isolate nat\""
   echo
-  echo 'UHF to Curiosity rover on Mars:'
-  echo $0 start interplanetary # 32kbit 32kbit
+  echo "UHF to Curiosity rover on Mars (percentages defined in $CONFIG):"
+  echo "$0 start --if=eth7 --dnspeed=32 --upspeed=32 --opts=interplanetary"
 }
 
-case $1 in
+case $COMMAND in
   start)
     log_daemon_msg "Enabling Cake scheduler" "cake"
     load
@@ -132,6 +181,8 @@ case $1 in
     ;;
   reload)
     log_daemon_msg "Setting new limits for Cake scheduler" "cake"
+    unload # FIXME:
+    load   # Find a better way to do this...
     set_limits
     log_end_msg $?
     ;;
