@@ -1,4 +1,5 @@
 *.tar.gz
+*.zip
 /sbin/ip
 /sbin/tc
 lib
